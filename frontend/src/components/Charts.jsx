@@ -110,13 +110,13 @@ export const TopProductsDoughnut = () => {
 
 // --- Admin Charts ---
 
-export const PlatformRevenueLineChart = () => {
+export const PlatformRevenueLineChart = ({ chartData }) => {
   const data = {
     labels: last6Months,
     datasets: [
       {
         label: 'User Orders (₹)',
-        data: [45000, 72000, 58000, 91000, 78000, 115000].slice(-last6Months.length),
+        data: chartData?.userOrders || [0, 0, 0, 0, 0, 0],
         fill: true,
         borderColor: 'rgba(22, 163, 74, 1)',
         backgroundColor: 'rgba(22, 163, 74, 0.08)',
@@ -126,7 +126,7 @@ export const PlatformRevenueLineChart = () => {
       },
       {
         label: 'Shopkeeper Revenue (₹)',
-        data: [32000, 54000, 41000, 67000, 59000, 88000].slice(-last6Months.length),
+        data: chartData?.shopkeeperRevenue || [0, 0, 0, 0, 0, 0],
         fill: true,
         borderColor: 'rgba(99, 102, 241, 1)',
         backgroundColor: 'rgba(99, 102, 241, 0.08)',
@@ -152,12 +152,12 @@ export const PlatformRevenueLineChart = () => {
   return <Line data={data} options={options} />;
 };
 
-export const StoreGrowthBarChart = () => {
+export const StoreGrowthBarChart = ({ chartData }) => {
   const data = {
     labels: last6Months,
     datasets: [{
       label: 'New Stores Registered',
-      data: [4, 7, 3, 9, 6, 12].slice(-last6Months.length),
+      data: chartData || [0, 0, 0, 0, 0, 0],
       backgroundColor: 'rgba(245, 158, 11, 0.8)',
       borderColor: 'rgba(245, 158, 11, 1)',
       borderWidth: 2,
@@ -175,11 +175,11 @@ export const StoreGrowthBarChart = () => {
   return <Bar data={data} options={options} />;
 };
 
-export const UserRoleDoughnut = () => {
+export const UserRoleDoughnut = ({ chartData }) => {
   const data = {
     labels: ['Rural Users', 'Shopkeepers', 'Admins'],
     datasets: [{
-      data: [1240, 86, 4],
+      data: chartData || [0, 0, 0],
       backgroundColor: [
         'rgba(22, 163, 74, 0.85)',
         'rgba(99, 102, 241, 0.85)',

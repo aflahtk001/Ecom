@@ -54,11 +54,52 @@ const getPlatformStats = async (req, res) => {
     const orders = await Order.find({ paymentStatus: 'completed' });
     const platformRevenue = orders.reduce((acc, order) => acc + (order.totalAmount || 0), 0) * 0.05; // Assuming 5% platform fee
 
+    // --- Chart Data Computations ---
+    
+    // User Distribution
+    const ruralUsers = await User.countDocuments({ role: 'user' });
+    const admins = await User.countDocuments({ role: 'admin' });
+    const shopkeepersCount = await Shopkeeper.countDocuments();
+    
+    // Generate last 6 months list
+    const last6Months = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      last6Months.push({ month: d.getMonth(), year: d.getFullYear() });
+    }
+
+    const stores = await Shopkeeper.find({});
+    
+    const storeGrowthData = last6Months.map(m => {
+      return stores.filter(s => {
+        const d = new Date(s.createdAt);
+        return d.getMonth() === m.month && d.getFullYear() === m.year;
+      }).length;
+    });
+
+    const userOrdersData = last6Months.map(m => {
+      return orders.filter(o => {
+        const d = new Date(o.createdAt);
+        return d.getMonth() === m.month && d.getFullYear() === m.year;
+      }).reduce((acc, order) => acc + (order.totalAmount || 0), 0);
+    });
+
+    const shopkeeperRevenueData = userOrdersData.map(val => val * 0.95);
+
     res.json({
       totalUsers,
       totalStores,
       totalOrders,
-      platformRevenue
+      platformRevenue,
+      charts: {
+        userDistribution: [ruralUsers, shopkeepersCount, admins],
+        storeGrowth: storeGrowthData,
+        revenueTrends: {
+          userOrders: userOrdersData,
+          shopkeeperRevenue: shopkeeperRevenueData
+        }
+      }
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

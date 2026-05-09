@@ -20,7 +20,7 @@ const createOrder = async (req, res) => {
 
     // Create Razorpay order
     const options = {
-      amount: totalAmount * 100, // amount in smallest currency unit (paise)
+      amount: Math.round(totalAmount * 100), // amount in smallest currency unit (paise)
       currency: "INR",
       receipt: `receipt_order_${Date.now()}`
     };

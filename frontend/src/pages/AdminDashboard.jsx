@@ -55,7 +55,7 @@ const AdminDashboard = () => {
     { label: 'Total Users', val: stats.totalUsers, color: 'text-blue-600', bg: 'bg-blue-50', icon: '👥', change: '--' },
     { label: 'Total Stores', val: stats.totalStores, color: 'text-green-600', bg: 'bg-green-50', icon: '🏪', change: '--' },
     { label: 'Total Orders', val: stats.totalOrders, color: 'text-purple-600', bg: 'bg-purple-50', icon: '📦', change: '--' },
-    { label: 'Platform Revenue', val: `₹${stats.platformRevenue}`, color: 'text-amber-600', bg: 'bg-amber-50', icon: '💰', change: '--' },
+    { label: 'Platform Revenue', val: `₹${(Number(stats.platformRevenue) || 0).toFixed(2)}`, color: 'text-amber-600', bg: 'bg-amber-50', icon: '💰', change: '--' },
   ] : [
     { label: 'Total Users', val: '--', color: 'text-blue-600', bg: 'bg-blue-50', icon: '👥', change: '--' },
     { label: 'Total Stores', val: '--', color: 'text-green-600', bg: 'bg-green-50', icon: '🏪', change: '--' },
@@ -90,7 +90,7 @@ const AdminDashboard = () => {
             <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
               <h2 className="text-lg font-semibold text-gray-800 mb-5">Platform Revenue Trends</h2>
               <div className="h-60">
-                <PlatformRevenueLineChart />
+                <PlatformRevenueLineChart chartData={stats?.charts?.revenueTrends} />
               </div>
             </div>
 
@@ -98,7 +98,7 @@ const AdminDashboard = () => {
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
               <h2 className="text-lg font-semibold text-gray-800 mb-5">User Distribution</h2>
               <div className="h-60 flex items-center justify-center">
-                <UserRoleDoughnut />
+                <UserRoleDoughnut chartData={stats?.charts?.userDistribution} />
               </div>
             </div>
           </div>
@@ -109,7 +109,7 @@ const AdminDashboard = () => {
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
               <h2 className="text-lg font-semibold text-gray-800 mb-5">New Stores / Month</h2>
               <div className="h-48">
-                <StoreGrowthBarChart />
+                <StoreGrowthBarChart chartData={stats?.charts?.storeGrowth} />
               </div>
             </div>
 
