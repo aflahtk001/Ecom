@@ -50,6 +50,22 @@ const Register = () => {
     e.preventDefault();
     setIsLoading(true);
     
+    // Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^\d{10}$/;
+
+    if (!emailRegex.test(formData.email)) {
+      toast.error('Please enter a valid email address');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!phoneRegex.test(formData.phone)) {
+      toast.error('Phone number must be exactly 10 digits');
+      setIsLoading(false);
+      return;
+    }
+
     // Shopkeepers must provide location
     if (role === 'shopkeeper' && !coords) {
       toast.error('Please capture your store location first');
@@ -116,7 +132,7 @@ const Register = () => {
             )}
 
             <div><label className="block text-sm font-medium text-gray-700">Email address</label><input type="email" name="email" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" onChange={handleChange} /></div>
-            <div><label className="block text-sm font-medium text-gray-700">Phone Number</label><input type="text" name="phone" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" onChange={handleChange} /></div>
+            <div><label className="block text-sm font-medium text-gray-700">Phone Number</label><input type="tel" name="phone" placeholder="e.g. 9876543210" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" onChange={handleChange} /></div>
             <div><label className="block text-sm font-medium text-gray-700">Password</label><input type="password" name="password" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" onChange={handleChange} /></div>
 
             <button type="submit" disabled={isLoading} className={`w-full py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white ${isLoading ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'} transition mt-6`}>

@@ -17,8 +17,14 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    
+    // Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const endpoint = `/auth/${role}/login`;
       const { data } = await api.post(endpoint, { email, password });
