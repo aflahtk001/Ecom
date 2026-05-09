@@ -143,11 +143,30 @@ const deleteUser = async (req, res) => {
 };
 
 // @desc    Get admin financial ledger (payments received & payouts)
-// @route   GET /api/admin/ledger
+// @route   GET /api/admin/ledger?period=day|month|year
 const getLedger = async (req, res) => {
   try {
-    const orders = await Order.find({ paymentStatus: 'completed' }).populate('shopkeeperId', 'storeName ownerName');
-    const payouts = await Payout.find({}).populate('shopkeeperId', 'storeName ownerName');
+    const { period } = req.query; // 'day' | 'month' | 'year' | undefined (all time)
+
+    // Build date filter based on period
+    let dateFilter = {};
+    if (period) {
+      const now = new Date();
+      let from;
+      if (period === 'day') {
+        from = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // start of today
+      } else if (period === 'month') {
+        from = new Date(now.getFullYear(), now.getMonth(), 1); // start of this month
+      } else if (period === 'year') {
+        from = new Date(now.getFullYear(), 0, 1); // start of this year
+      }
+      if (from) dateFilter = { createdAt: { $gte: from } };
+    }
+
+    const orders = await Order.find({ paymentStatus: 'completed', ...dateFilter })
+      .populate('shopkeeperId', 'storeName ownerName');
+    const payouts = await Payout.find({ ...dateFilter })
+      .populate('shopkeeperId', 'storeName ownerName');
 
     let totalReceived = 0;
     const storeLedgerMap = {};
@@ -156,7 +175,6 @@ const getLedger = async (req, res) => {
       totalReceived += order.totalAmount;
       const shopId = order.shopkeeperId?._id?.toString();
       if (!shopId) return;
-      
       if (!storeLedgerMap[shopId]) {
         storeLedgerMap[shopId] = {
           shopkeeperId: shopId,
@@ -173,7 +191,6 @@ const getLedger = async (req, res) => {
     payouts.forEach(payout => {
       const shopId = payout.shopkeeperId?._id?.toString();
       if (!shopId) return;
-      
       if (!storeLedgerMap[shopId]) {
         storeLedgerMap[shopId] = {
           shopkeeperId: shopId,
@@ -195,7 +212,8 @@ const getLedger = async (req, res) => {
     res.json({
       totalReceived,
       totalPayouts: payouts.reduce((acc, p) => acc + p.amount, 0),
-      storeLedger
+      storeLedger,
+      period: period || 'all'
     });
 
   } catch (error) {

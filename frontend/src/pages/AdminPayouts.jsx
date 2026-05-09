@@ -10,11 +10,13 @@ const AdminPayouts = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedStore, setSelectedStore] = useState(null);
   const [payoutAmount, setPayoutAmount] = useState('');
+  const [period, setPeriod] = useState('');
   const [transactionRef, setTransactionRef] = useState('');
 
   const fetchLedger = async () => {
+    setLoading(true);
     try {
-      const { data } = await api.get('/admin/ledger');
+      const { data } = await api.get('/admin/ledger', { params: { period } });
       setLedgerData(data);
     } catch (error) {
       toast.error('Failed to load ledger data');
@@ -25,7 +27,7 @@ const AdminPayouts = () => {
 
   useEffect(() => {
     fetchLedger();
-  }, []);
+  }, [period]);
 
   const handlePayoutSubmit = async (e) => {
     e.preventDefault();
@@ -67,8 +69,28 @@ const AdminPayouts = () => {
       <div className="flex flex-1">
         <Sidebar links={links} />
         <main className="flex-1 p-8 overflow-y-auto">
-          <h1 className="text-3xl font-bold text-gray-800 mb-1">Payments & Payouts Ledger</h1>
-          <p className="text-gray-400 text-sm mb-8">Track unified payments and disburse funds to shopkeepers</p>
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 mb-1">Payments & Payouts Ledger</h1>
+              <p className="text-gray-400 text-sm">Track unified payments and disburse funds to shopkeepers</p>
+            </div>
+            
+            <div className="flex bg-white rounded-lg shadow-sm border border-gray-200 p-1">
+              {['', 'day', 'month', 'year'].map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                    period === p
+                      ? 'bg-indigo-50 text-indigo-700'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  {p === '' ? 'All Time' : p === 'day' ? 'Today' : p === 'month' ? 'This Month' : 'This Year'}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
