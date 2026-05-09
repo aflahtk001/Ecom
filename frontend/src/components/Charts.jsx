@@ -23,6 +23,14 @@ const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const currentMonthIdx = new Date().getMonth();
 const last6Months = months.slice(Math.max(0, currentMonthIdx - 5), currentMonthIdx + 1);
 
+// Smart rupee tick formatter — shows ₹Xk only when value is large enough
+const formatRupee = (v) => {
+  const abs = Math.abs(v);
+  if (abs >= 100000) return `₹${(v / 100000).toFixed(1)}L`;
+  if (abs >= 1000)   return `₹${(v / 1000).toFixed(1)}k`;
+  return `₹${v.toFixed(0)}`;
+};
+
 // --- Shopkeeper Charts ---
 
 export const SalesBarChart = () => {
@@ -46,7 +54,7 @@ export const SalesBarChart = () => {
     scales: {
       y: {
         grid: { color: 'rgba(0,0,0,0.04)' },
-        ticks: { callback: (v) => `₹${(v / 1000).toFixed(0)}k` },
+        ticks: { callback: formatRupee },
       },
       x: { grid: { display: false } },
     },
@@ -74,7 +82,7 @@ export const RevenueLineChart = () => {
     scales: {
       y: {
         grid: { color: 'rgba(0,0,0,0.04)' },
-        ticks: { callback: (v) => `₹${(v / 1000).toFixed(0)}k` },
+        ticks: { callback: formatRupee },
       },
       x: { grid: { display: false } },
     },
@@ -144,7 +152,7 @@ export const PlatformRevenueLineChart = ({ chartData }) => {
     scales: {
       y: {
         grid: { color: 'rgba(0,0,0,0.04)' },
-        ticks: { callback: (v) => `₹${(v / 1000).toFixed(0)}k` },
+        ticks: { callback: formatRupee },
       },
       x: { grid: { display: false } },
     },
