@@ -11,12 +11,20 @@ const AdminPayouts = () => {
   const [selectedStore, setSelectedStore] = useState(null);
   const [payoutAmount, setPayoutAmount] = useState('');
   const [period, setPeriod] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [transactionRef, setTransactionRef] = useState('');
 
   const fetchLedger = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/admin/ledger', { params: { period } });
+      const params = { period };
+      if (period === 'day') params.date = selectedDate;
+      if (period === 'month') params.month = selectedMonth;
+      if (period === 'year') params.year = selectedYear;
+
+      const { data } = await api.get('/admin/ledger', { params });
       setLedgerData(data);
     } catch (error) {
       toast.error('Failed to load ledger data');
@@ -27,7 +35,7 @@ const AdminPayouts = () => {
 
   useEffect(() => {
     fetchLedger();
-  }, [period]);
+  }, [period, selectedDate, selectedMonth, selectedYear]);
 
   const handlePayoutSubmit = async (e) => {
     e.preventDefault();
@@ -75,20 +83,52 @@ const AdminPayouts = () => {
               <p className="text-gray-400 text-sm">Track unified payments and disburse funds to shopkeepers</p>
             </div>
             
-            <div className="flex bg-white rounded-lg shadow-sm border border-gray-200 p-1">
-              {['', 'day', 'month', 'year'].map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPeriod(p)}
-                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                    period === p
-                      ? 'bg-indigo-50 text-indigo-700'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-                >
-                  {p === '' ? 'All Time' : p === 'day' ? 'Today' : p === 'month' ? 'This Month' : 'This Year'}
-                </button>
-              ))}
+            <div className="flex flex-col items-end gap-3">
+              <div className="flex bg-white rounded-lg shadow-sm border border-gray-200 p-1">
+                {['', 'day', 'month', 'year'].map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPeriod(p)}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                      period === p
+                        ? 'bg-indigo-50 text-indigo-700'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
+                    {p === '' ? 'All Time' : p === 'day' ? 'Day' : p === 'month' ? 'Month' : 'Year'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Specific Period Pickers */}
+              <div className="flex items-center gap-2">
+                {period === 'day' && (
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 bg-white"
+                  />
+                )}
+                {period === 'month' && (
+                  <input
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 bg-white"
+                  />
+                )}
+                {period === 'year' && (
+                  <input
+                    type="number"
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    min="2020"
+                    max="2100"
+                    className="w-24 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 bg-white"
+                  />
+                )}
+              </div>
             </div>
           </div>
 

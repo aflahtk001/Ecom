@@ -143,77 +143,96 @@ const deleteUser = async (req, res) => {
 };
 
 // @desc    Get admin financial ledger (payments received & payouts)
-// @route   GET /api/admin/ledger?period=day|month|year
+// @route   GET /api/admin/ledger?period=day|month|year&date=...&month=...&year=...
 const getLedger = async (req, res) => {
   try {
-    const { period } = req.query; // 'day' | 'month' | 'year' | undefined (all time)
+    const { period, date, month, year } = req.query;
 
-    // Build date filter based on period
-    let dateFilter = {};
-    if (period) {
-      const now = new Date();
-      let from;
-      if (period === 'day') {
-        from = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // start of today
-      } else if (period === 'month') {
-        from = new Date(now.getFullYear(), now.getMonth(), 1); // start of this month
-      } else if (period === 'year') {
-        from = new Date(now.getFullYear(), 0, 1); // start of this year
+    let periodStart, periodEnd;
+    const now = new Date();
+
+    if (period === 'day') {
+      const d = date ? new Date(date) : now;
+      periodStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      periodEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+    } else if (period === 'month') {
+      // month format: YYYY-MM
+      let y, m;
+      if (month) {
+        [y, m] = month.split('-').map(Number);
+      } else {
+        y = now.getFullYear();
+        m = now.getMonth() + 1;
       }
-      if (from) dateFilter = { createdAt: { $gte: from } };
+      periodStart = new Date(y, m - 1, 1);
+      periodEnd = new Date(y, m, 0, 23, 59, 59, 999);
+    } else if (period === 'year') {
+      const y = year ? Number(year) : now.getFullYear();
+      periodStart = new Date(y, 0, 1);
+      periodEnd = new Date(y, 11, 31, 23, 59, 59, 999);
     }
 
-    const orders = await Order.find({ paymentStatus: 'completed', ...dateFilter })
-      .populate('shopkeeperId', 'storeName ownerName');
-    const payouts = await Payout.find({ ...dateFilter })
-      .populate('shopkeeperId', 'storeName ownerName');
+    // 1. Fetch All Data to compute cumulative balance and period activity
+    const orders = await Order.find({ paymentStatus: 'completed' }).populate('shopkeeperId', 'storeName ownerName');
+    const payouts = await Payout.find({}).populate('shopkeeperId', 'storeName ownerName');
+    const shopkeepers = await Shopkeeper.find({}).select('storeName ownerName');
 
-    let totalReceived = 0;
     const storeLedgerMap = {};
 
+    // Initialize map with all shopkeepers
+    shopkeepers.forEach(s => {
+      storeLedgerMap[s._id.toString()] = {
+        shopkeeperId: s._id.toString(),
+        storeName: s.storeName,
+        ownerName: s.ownerName,
+        totalSales: 0, // Period Specific
+        totalPaid: 0,  // Period Specific
+        totalSalesAllTime: 0,
+        totalPaidAllTime: 0,
+        pendingBalance: 0
+      };
+    });
+
     orders.forEach(order => {
-      totalReceived += order.totalAmount;
       const shopId = order.shopkeeperId?._id?.toString();
-      if (!shopId) return;
-      if (!storeLedgerMap[shopId]) {
-        storeLedgerMap[shopId] = {
-          shopkeeperId: shopId,
-          storeName: order.shopkeeperId.storeName,
-          ownerName: order.shopkeeperId.ownerName,
-          totalSales: 0,
-          totalPaid: 0,
-          pendingBalance: 0
-        };
+      if (!shopId || !storeLedgerMap[shopId]) return;
+
+      // Cumulative
+      storeLedgerMap[shopId].totalSalesAllTime += order.totalAmount;
+
+      // Period Specific
+      if (!periodStart || (order.createdAt >= periodStart && order.createdAt <= periodEnd)) {
+        storeLedgerMap[shopId].totalSales += order.totalAmount;
       }
-      storeLedgerMap[shopId].totalSales += order.totalAmount;
     });
 
     payouts.forEach(payout => {
       const shopId = payout.shopkeeperId?._id?.toString();
-      if (!shopId) return;
-      if (!storeLedgerMap[shopId]) {
-        storeLedgerMap[shopId] = {
-          shopkeeperId: shopId,
-          storeName: payout.shopkeeperId?.storeName || 'Unknown',
-          ownerName: payout.shopkeeperId?.ownerName || 'Unknown',
-          totalSales: 0,
-          totalPaid: 0,
-          pendingBalance: 0
-        };
+      if (!shopId || !storeLedgerMap[shopId]) return;
+
+      // Cumulative
+      storeLedgerMap[shopId].totalPaidAllTime += payout.amount;
+
+      // Period Specific
+      if (!periodStart || (payout.createdAt >= periodStart && payout.createdAt <= periodEnd)) {
+        storeLedgerMap[shopId].totalPaid += payout.amount;
       }
-      storeLedgerMap[shopId].totalPaid += payout.amount;
     });
 
     const storeLedger = Object.values(storeLedgerMap).map(store => {
-      store.pendingBalance = store.totalSales - store.totalPaid;
+      store.pendingBalance = store.totalSalesAllTime - store.totalPaidAllTime;
       return store;
-    });
+    }).filter(s => s.totalSales > 0 || s.totalPaid > 0 || s.pendingBalance > 0);
+
+    const totalReceivedInPeriod = storeLedger.reduce((acc, s) => acc + s.totalSales, 0);
+    const totalPayoutsInPeriod = storeLedger.reduce((acc, s) => acc + s.totalPaid, 0);
 
     res.json({
-      totalReceived,
-      totalPayouts: payouts.reduce((acc, p) => acc + p.amount, 0),
+      totalReceived: totalReceivedInPeriod,
+      totalPayouts: totalPayoutsInPeriod,
       storeLedger,
-      period: period || 'all'
+      period: period || 'all',
+      queryRange: { periodStart, periodEnd }
     });
 
   } catch (error) {
