@@ -34,7 +34,7 @@ const processVoiceOrder = async (req, res) => {
     // (This is much more robust than a rigid database regex search)
     const allNearbyProducts = await Product.find({
       shopkeeperId: { $in: storeIds }
-    }).populate('shopkeeperId', 'storeName');
+    }).populate('shopkeeperId', 'storeName').lean();
 
     if (allNearbyProducts.length === 0) {
       return res.status(404).json({ message: 'No products found in nearby stores' });
