@@ -29,6 +29,7 @@ for (let i = 5; i >= 0; i--) {
 
 // Smart rupee tick formatter — shows ₹Xk only when value is large enough
 const formatRupee = (v) => {
+  if (v === 0) return '₹0';
   const abs = Math.abs(v);
   if (abs >= 100000) return `₹${(v / 100000).toFixed(1)}L`;
   if (abs >= 1000)   return `₹${(v / 1000).toFixed(1)}k`;
@@ -57,8 +58,13 @@ export const SalesBarChart = ({ chartData }) => {
     },
     scales: {
       y: {
+        beginAtZero: true,
+        suggestedMax: 5,
         grid: { color: 'rgba(0,0,0,0.04)' },
-        ticks: { callback: formatRupee },
+        ticks: { 
+          callback: formatRupee,
+          precision: 0 
+        },
       },
       x: { grid: { display: false } },
     },
@@ -85,8 +91,13 @@ export const RevenueLineChart = ({ chartData }) => {
     plugins: { legend: { display: false } },
     scales: {
       y: {
+        beginAtZero: true,
+        suggestedMax: 5,
         grid: { color: 'rgba(0,0,0,0.04)' },
-        ticks: { callback: formatRupee },
+        ticks: { 
+          callback: formatRupee,
+          precision: 0
+        },
       },
       x: { grid: { display: false } },
     },
@@ -155,8 +166,13 @@ export const PlatformRevenueLineChart = ({ chartData }) => {
     },
     scales: {
       y: {
+        beginAtZero: true,
+        suggestedMax: 100,
         grid: { color: 'rgba(0,0,0,0.04)' },
-        ticks: { callback: formatRupee },
+        ticks: { 
+          callback: formatRupee,
+          precision: 0
+        },
       },
       x: { grid: { display: false } },
     },
@@ -180,7 +196,12 @@ export const StoreGrowthBarChart = ({ chartData }) => {
     responsive: true,
     plugins: { legend: { display: false } },
     scales: {
-      y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { stepSize: 2 } },
+      y: { 
+        beginAtZero: true,
+        suggestedMax: 5,
+        grid: { color: 'rgba(0,0,0,0.04)' }, 
+        ticks: { stepSize: 1, precision: 0 } 
+      },
       x: { grid: { display: false } },
     },
   };
