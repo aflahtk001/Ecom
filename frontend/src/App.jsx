@@ -19,6 +19,7 @@ import AdminUsers from './pages/AdminUsers';
 import AdminPayouts from './pages/AdminPayouts';
 import ShopkeeperPayouts from './pages/ShopkeeperPayouts';
 import StoreProducts from './pages/StoreProducts';
+import AdminOrders from './pages/AdminOrders';
 
 const Home = () => (
   <div className="flex flex-col min-h-screen bg-gray-50">
@@ -55,6 +56,7 @@ function App() {
         <Route path="/admin-dashboard/categories" element={<ManageCategories />} />
         <Route path="/admin-dashboard/stores" element={<AdminStores />} />
         <Route path="/admin-dashboard/users" element={<AdminUsers />} />
+        <Route path="/admin-dashboard/orders" element={<AdminOrders />} />
         <Route path="/admin-dashboard/payouts" element={<AdminPayouts />} />
         <Route path="/store/:storeId/products" element={<StoreProducts />} />
       </Routes>

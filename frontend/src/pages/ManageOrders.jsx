@@ -6,29 +6,22 @@ import { io } from 'socket.io-client';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 
-const STATUS_PIPELINE = ['placed', 'confirmed', 'packed', 'out_for_delivery', 'delivered'];
+const STATUS_PIPELINE = ['received', 'packed', 'picked', 'delivered'];
 
 const STATUS_CONFIG = {
-  placed:           { label: 'New Order',        color: 'bg-blue-100 text-blue-800',   dot: 'bg-blue-500'   },
-  confirmed:        { label: 'Confirmed',         color: 'bg-indigo-100 text-indigo-800', dot: 'bg-indigo-500' },
+  received:         { label: 'New Order',        color: 'bg-blue-100 text-blue-800',   dot: 'bg-blue-500'   },
   packed:           { label: 'Packed',            color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500' },
-  out_for_delivery: { label: 'Out for Delivery',  color: 'bg-orange-100 text-orange-800', dot: 'bg-orange-500' },
+  picked:           { label: 'Picked up',         color: 'bg-orange-100 text-orange-800', dot: 'bg-orange-500' },
   delivered:        { label: 'Delivered',         color: 'bg-green-100 text-green-800',  dot: 'bg-green-500'  },
   cancelled:        { label: 'Cancelled',         color: 'bg-red-100 text-red-800',     dot: 'bg-red-500'    },
 };
 
 const NEXT_STATUS = {
-  placed:           'confirmed',
-  confirmed:        'packed',
-  packed:           'out_for_delivery',
-  out_for_delivery: 'delivered',
+  received:         'packed',
 };
 
 const NEXT_LABEL = {
-  placed:           'Accept Order',
-  confirmed:        'Mark Packed',
-  packed:           'Out for Delivery',
-  out_for_delivery: 'Mark Delivered',
+  received:         'Mark Packed',
 };
 
 const links = [
@@ -44,7 +37,7 @@ const MOCK_ORDERS = [
   {
     _id: 'mock001',
     createdAt: new Date().toISOString(),
-    orderStatus: 'placed',
+    orderStatus: 'received',
     paymentStatus: 'completed',
     totalAmount: 450,
     deliveryAddress: 'Kanjikuzhi, Kottayam, Kerala - 686004',
@@ -57,7 +50,7 @@ const MOCK_ORDERS = [
   {
     _id: 'mock002',
     createdAt: new Date(Date.now() - 3600000).toISOString(),
-    orderStatus: 'confirmed',
+    orderStatus: 'packed',
     paymentStatus: 'completed',
     totalAmount: 210,
     deliveryAddress: 'Vaikom, Kottayam, Kerala - 686141',
@@ -213,7 +206,7 @@ const ManageOrders = () => {
           ) : (
             <div className="space-y-5">
               {filteredOrders.map(order => {
-                const cfg = STATUS_CONFIG[order.orderStatus] || STATUS_CONFIG['placed'];
+                const cfg = STATUS_CONFIG[order.orderStatus] || STATUS_CONFIG['received'];
                 const nextStatus = NEXT_STATUS[order.orderStatus];
                 const canAct = nextStatus !== undefined;
                 const isUpdating = updatingId === order._id;
@@ -285,7 +278,7 @@ const ManageOrders = () => {
                         </div>
 
                         {/* Action Buttons */}
-                        {order.orderStatus !== 'delivered' && order.orderStatus !== 'cancelled' ? (
+                        {order.orderStatus === 'received' ? (
                           <div className="flex gap-2">
                             {canAct && (
                               <button
@@ -305,8 +298,8 @@ const ManageOrders = () => {
                             </button>
                           </div>
                         ) : (
-                          <div className={`text-center py-2 rounded-lg text-sm font-medium ${order.orderStatus === 'delivered' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
-                            {order.orderStatus === 'delivered' ? '✅ Order Completed' : '❌ Order Cancelled'}
+                          <div className={`text-center py-2 rounded-lg text-sm font-medium ${order.orderStatus === 'cancelled' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}`}>
+                            {order.orderStatus === 'cancelled' ? '❌ Order Cancelled' : `✅ ${STATUS_CONFIG[order.orderStatus].label}`}
                           </div>
                         )}
                       </div>

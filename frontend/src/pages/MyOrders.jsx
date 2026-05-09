@@ -7,16 +7,15 @@ import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 
 const STATUS_CONFIG = {
-  placed:           { label: 'Order Placed',      color: 'bg-blue-100 text-blue-800',     dot: 'bg-blue-500',   step: 0 },
-  confirmed:        { label: 'Confirmed',          color: 'bg-indigo-100 text-indigo-800', dot: 'bg-indigo-500', step: 1 },
-  packed:           { label: 'Packed',             color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500', step: 2 },
-  out_for_delivery: { label: 'Out for Delivery',   color: 'bg-orange-100 text-orange-800', dot: 'bg-orange-500', step: 3 },
-  delivered:        { label: 'Delivered',          color: 'bg-green-100 text-green-800',   dot: 'bg-green-500',  step: 4 },
+  received:         { label: 'Order Received',     color: 'bg-blue-100 text-blue-800',     dot: 'bg-blue-500',   step: 0 },
+  packed:           { label: 'Packed',             color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500', step: 1 },
+  picked:           { label: 'Picked up',          color: 'bg-orange-100 text-orange-800', dot: 'bg-orange-500', step: 2 },
+  delivered:        { label: 'Delivered',          color: 'bg-green-100 text-green-800',   dot: 'bg-green-500',  step: 3 },
   cancelled:        { label: 'Cancelled',          color: 'bg-red-100 text-red-800',       dot: 'bg-red-500',    step: -1 },
 };
 
-const STEPS = ['placed', 'confirmed', 'packed', 'out_for_delivery', 'delivered'];
-const STEP_LABELS = ['Placed', 'Confirmed', 'Packed', 'Out for Delivery', 'Delivered'];
+const STEPS = ['received', 'packed', 'picked', 'delivered'];
+const STEP_LABELS = ['Received', 'Packed', 'Picked', 'Delivered'];
 
 const MOCK_ORDERS = [
   {
@@ -97,6 +96,39 @@ const MyOrders = () => {
     };
   }, [userInfo]);
 
+  // Group orders by razorpayOrderId (Transaction)
+  const groupOrders = (orders) => {
+    const groups = {};
+    orders.forEach(order => {
+      const id = order.razorpayOrderId || `single_${order._id}`;
+      if (!groups[id]) {
+        groups[id] = {
+          id,
+          createdAt: order.createdAt,
+          deliveryAddress: order.deliveryAddress,
+          subOrders: [],
+          totalAmount: 0
+        };
+      }
+      groups[id].subOrders.push(order);
+      groups[id].totalAmount += order.totalAmount;
+    });
+    return Object.values(groups).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  };
+
+  const getAggregateStatus = (subOrders) => {
+    if (subOrders.every(o => o.orderStatus === 'delivered')) return 'delivered';
+    if (subOrders.every(o => ['delivered', 'picked'].includes(o.orderStatus))) return 'picked';
+    if (subOrders.every(o => ['delivered', 'picked', 'packed'].includes(o.orderStatus))) return 'packed';
+    if (subOrders.some(o => o.orderStatus === 'cancelled')) {
+        // If all are cancelled, show cancelled, otherwise show the lowest active status
+        if (subOrders.every(o => o.orderStatus === 'cancelled')) return 'cancelled';
+    }
+    return 'received';
+  };
+
+  const groupedTransactions = groupOrders(orders);
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
@@ -120,45 +152,60 @@ const MyOrders = () => {
               </a>
             </div>
           ) : (
-            <div className="space-y-6">
-              {orders.map(order => {
-                const cfg = STATUS_CONFIG[order.orderStatus] || STATUS_CONFIG['placed'];
-                const currentStep = STEPS.indexOf(order.orderStatus);
+            <div className="space-y-8">
+              {groupedTransactions.map(tx => {
+                const aggregateStatus = getAggregateStatus(tx.subOrders);
+                const cfg = STATUS_CONFIG[aggregateStatus] || STATUS_CONFIG['received'];
+                const currentStep = STEPS.indexOf(aggregateStatus);
 
                 return (
-                  <div key={order._id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    {/* Header */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 bg-gray-50 gap-2">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <span className="font-mono text-xs text-gray-400">#{order._id.toString().slice(-6).toUpperCase()}</span>
-                        <span className={`text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 ${cfg.color}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                  <div key={tx.id} className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+                    {/* Transaction Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-5 bg-gray-50/50 border-b border-gray-100 gap-4">
+                      <div>
+                        <div className="flex items-center gap-3 mb-1">
+                          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Transaction</span>
+                          <span className="font-mono text-xs text-gray-500 bg-white px-2 py-0.5 rounded border border-gray-200">
+                            {tx.id.replace('order_', '').toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400">{new Date(tx.createdAt).toLocaleString()}</p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right hidden sm:block">
+                          <p className="text-xs font-medium text-gray-400 uppercase">Total Amount</p>
+                          <p className="text-xl font-black text-green-600">₹{tx.totalAmount}</p>
+                        </div>
+                        <span className={`text-sm font-bold px-4 py-1.5 rounded-full shadow-sm flex items-center gap-2 ${cfg.color}`}>
+                          <span className={`w-2 h-2 rounded-full ${cfg.dot} animate-pulse`} />
                           {cfg.label}
                         </span>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <span>🏪 {order.shopkeeperId?.storeName || 'Store'}</span>
-                        <span className="font-bold text-green-600">₹{order.totalAmount}</span>
-                      </div>
                     </div>
 
-                    {/* Delivery Progress (stepper) */}
-                    {order.orderStatus !== 'cancelled' && (
-                      <div className="px-6 pt-5 pb-2">
-                        <div className="flex items-center gap-0">
+                    {/* Progress Stepper */}
+                    {aggregateStatus !== 'cancelled' && (
+                      <div className="px-8 pt-8 pb-4">
+                        <div className="flex items-center relative">
                           {STEPS.map((s, i) => {
                             const done = currentStep >= i;
                             const active = currentStep === i;
                             return (
                               <React.Fragment key={s}>
-                                <div className="flex flex-col items-center flex-none">
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${done ? 'bg-green-500 text-white shadow-md' : 'bg-gray-200 text-gray-400'} ${active ? 'ring-4 ring-green-200 scale-110' : ''}`}>
+                                <div className="flex flex-col items-center relative z-10">
+                                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-500 ${done ? 'bg-green-500 text-white shadow-lg shadow-green-200' : 'bg-gray-100 text-gray-400'} ${active ? 'ring-4 ring-green-100 scale-110' : ''}`}>
                                     {done ? '✓' : i + 1}
                                   </div>
-                                  <p className={`text-xs mt-1.5 font-medium text-center max-w-[56px] leading-tight ${done ? 'text-green-600' : 'text-gray-400'}`}>{STEP_LABELS[i]}</p>
+                                  <p className={`text-[10px] mt-2 font-bold uppercase tracking-tighter text-center w-16 ${done ? 'text-green-600' : 'text-gray-400'}`}>
+                                    {STEP_LABELS[i]}
+                                  </p>
                                 </div>
                                 {i < STEPS.length - 1 && (
-                                  <div className={`flex-1 h-1 mx-1 rounded-full mt-[-16px] transition-all ${currentStep > i ? 'bg-green-500' : 'bg-gray-200'}`} />
+                                  <div className="flex-1 px-2 mb-6">
+                                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                        <div className={`h-full bg-green-500 transition-all duration-700 ${currentStep > i ? 'w-full' : 'w-0'}`} />
+                                    </div>
+                                  </div>
                                 )}
                               </React.Fragment>
                             );
@@ -167,24 +214,47 @@ const MyOrders = () => {
                       </div>
                     )}
 
-                    {/* Order Details */}
-                    <div className="px-6 py-5 grid sm:grid-cols-2 gap-6 border-t border-gray-50 mt-3">
-                      <div>
-                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Items Ordered</p>
-                        <ul className="space-y-1">
-                          {order.products.map((p, i) => (
-                            <li key={i} className="text-sm text-gray-700 flex justify-between">
-                              <span>{p.productId?.name || 'Product'} × {p.quantity} {p.productId?.unit || ''}</span>
-                              <span className="font-medium text-gray-500">₹{p.price * p.quantity}</span>
-                            </li>
-                          ))}
-                        </ul>
+                    {/* Sub-Orders (Shops) */}
+                    <div className="px-6 py-6 border-t border-gray-50 bg-white">
+                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Items from {tx.subOrders.length} {tx.subOrders.length > 1 ? 'Shops' : 'Shop'}</h3>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {tx.subOrders.map(sub => (
+                          <div key={sub._id} className="p-4 rounded-xl border border-gray-100 bg-gray-50/30 flex flex-col justify-between">
+                            <div className="flex justify-between items-start mb-3">
+                              <div>
+                                <p className="font-bold text-gray-800 text-sm">{sub.shopkeeperId?.storeName || 'Local Store'}</p>
+                                <p className="text-[10px] text-gray-400 font-mono uppercase">Order #{sub._id.slice(-6)}</p>
+                              </div>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${STATUS_CONFIG[sub.orderStatus]?.color || 'bg-gray-100'}`}>
+                                {STATUS_CONFIG[sub.orderStatus]?.label || sub.orderStatus}
+                              </span>
+                            </div>
+                            <ul className="space-y-1 mb-3">
+                              {sub.products.map((p, i) => (
+                                <li key={i} className="text-xs text-gray-600 flex justify-between">
+                                  <span>{p.productId?.name} × {p.quantity}</span>
+                                  <span className="font-medium">₹{p.price * p.quantity}</span>
+                                </li>
+                              ))}
+                            </ul>
+                            <div className="pt-2 border-t border-gray-100 flex justify-between items-center mt-auto">
+                                <span className="text-xs font-bold text-gray-800">Shop Total</span>
+                                <span className="text-sm font-black text-green-600">₹{sub.totalAmount}</span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Delivery Address</p>
-                        <p className="text-sm text-gray-700 leading-relaxed">📍 {order.deliveryAddress}</p>
-                        <p className="text-xs text-gray-400 mt-2">{new Date(order.createdAt).toLocaleString()}</p>
-                      </div>
+                    </div>
+
+                    {/* Delivery Footer */}
+                    <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span className="text-lg">📍</span>
+                            <p className="italic">Delivering to: <span className="font-medium text-gray-700">{tx.deliveryAddress}</span></p>
+                        </div>
+                        {aggregateStatus === 'packed' && (
+                            <p className="text-[10px] font-bold text-indigo-500 animate-pulse">Waiting for Admin pickup...</p>
+                        )}
                     </div>
                   </div>
                 );

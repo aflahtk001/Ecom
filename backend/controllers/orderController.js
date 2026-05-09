@@ -59,7 +59,7 @@ const createOrder = async (req, res) => {
         deliveryAddress,
         razorpayOrderId: rzpOrder.id,
         paymentStatus: 'pending',
-        orderStatus: 'placed'
+        orderStatus: 'received'
       });
       const savedOrder = await order.save();
       createdOrders.push(savedOrder);
@@ -103,7 +103,7 @@ const verifyPayment = async (req, res) => {
 
     await Order.updateMany(
       { razorpayOrderId: razorpay_order_id },
-      { $set: { paymentStatus: 'completed', orderStatus: 'confirmed' } }
+      { $set: { paymentStatus: 'completed', orderStatus: 'received' } }
     );
 
     res.json({ message: 'Payment verified successfully', orderIds: orders.map(o => o._id) });
@@ -132,7 +132,7 @@ const getShopkeeperOrders = async (req, res) => {
 const updateOrderStatus = async (req, res) => {
   try {
     const { orderStatus } = req.body;
-    const validStatuses = ['confirmed', 'packed', 'out_for_delivery', 'delivered', 'cancelled'];
+    const validStatuses = ['received', 'packed', 'picked', 'delivered', 'cancelled'];
 
     if (!validStatuses.includes(orderStatus)) {
       return res.status(400).json({ message: 'Invalid order status' });
@@ -141,8 +141,20 @@ const updateOrderStatus = async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
 
-    if (order.shopkeeperId.toString() !== req.user.id) {
-      return res.status(401).json({ message: 'Not authorized to update this order' });
+    // Role-based restrictions
+    if (req.user.role === 'shopkeeper') {
+      if (order.shopkeeperId.toString() !== req.user.id) {
+        return res.status(401).json({ message: 'Not authorized to update this order' });
+      }
+      if (orderStatus !== 'packed' && orderStatus !== 'cancelled') {
+        return res.status(400).json({ message: 'Shopkeepers can only mark as packed or cancelled' });
+      }
+    } else if (req.user.role === 'admin') {
+      if (!['picked', 'delivered', 'cancelled'].includes(orderStatus)) {
+        return res.status(400).json({ message: 'Admin can only mark as picked, delivered, or cancelled' });
+      }
+    } else {
+      return res.status(401).json({ message: 'Not authorized' });
     }
 
     order.orderStatus = orderStatus;
@@ -174,4 +186,19 @@ const getUserOrders = async (req, res) => {
   }
 };
 
-module.exports = { createOrder, verifyPayment, getShopkeeperOrders, updateOrderStatus, getUserOrders };
+// @desc    Get all orders for admin
+// @route   GET /api/orders/admin
+const getAdminOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({})
+      .populate('userId', 'name phone')
+      .populate('shopkeeperId', 'storeName ownerName')
+      .populate('products.productId', 'name unit')
+      .sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { createOrder, verifyPayment, getShopkeeperOrders, updateOrderStatus, getUserOrders, getAdminOrders };

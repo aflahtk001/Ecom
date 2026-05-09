@@ -7,7 +7,8 @@ router.post('/', protect, createOrder);
 router.post('/verify', protect, verifyPayment);
 router.get('/shopkeeper', protect, authorizeRoles('shopkeeper'), getShopkeeperOrders);
 router.get('/my', protect, authorizeRoles('user'), getUserOrders);
-router.put('/:id/status', protect, authorizeRoles('shopkeeper'), updateOrderStatus);
+router.get('/admin', protect, authorizeRoles('admin'), getAdminOrders);
+router.put('/:id/status', protect, authorizeRoles('shopkeeper', 'admin'), updateOrderStatus);
 
 module.exports = router;
 
