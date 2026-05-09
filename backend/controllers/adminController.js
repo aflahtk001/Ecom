@@ -50,9 +50,10 @@ const getPlatformStats = async (req, res) => {
     const totalStores = await Shopkeeper.countDocuments({ isApproved: true });
     const totalOrders = await Order.countDocuments();
     
-    // Simple revenue aggregation
-    const orders = await Order.find({ paymentStatus: 'completed' });
-    const platformRevenue = orders.reduce((acc, order) => acc + (order.totalAmount || 0), 0) * 0.05; // Assuming 5% platform fee
+    // Platform Revenue calculated as 1% of Total Payouts Disbursed
+    const payouts = await Payout.find({});
+    const totalPayouts = payouts.reduce((acc, p) => acc + (p.amount || 0), 0);
+    const platformRevenue = totalPayouts * 0.01;
 
     // --- Chart Data Computations ---
     
