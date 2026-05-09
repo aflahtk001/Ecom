@@ -286,7 +286,7 @@ const ManageOrders = () => {
                                 onClick={() => handleStatusUpdate(order._id, nextStatus)}
                                 className="flex-1 bg-green-600 text-white text-sm py-2 rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50 shadow-sm"
                               >
-                                {isUpdating ? '...' : NEXT_LABEL[order.orderStatus]}
+                                {isUpdating ? '...' : (NEXT_LABEL[order.orderStatus] || 'Mark Packed')}
                               </button>
                             )}
                             <button
@@ -299,7 +299,7 @@ const ManageOrders = () => {
                           </div>
                         ) : (
                           <div className={`text-center py-2 rounded-lg text-sm font-medium ${order.orderStatus === 'cancelled' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}`}>
-                            {order.orderStatus === 'cancelled' ? '❌ Order Cancelled' : `✅ ${STATUS_CONFIG[order.orderStatus].label}`}
+                            {order.orderStatus === 'cancelled' ? '❌ Order Cancelled' : `✅ ${STATUS_CONFIG[order.orderStatus]?.label || order.orderStatus}`}
                           </div>
                         )}
                       </div>
