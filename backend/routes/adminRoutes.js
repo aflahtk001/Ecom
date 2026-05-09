@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getPendingStores, updateStoreStatus, getPlatformStats, getAllStores, getAllUsers, deleteUser } = require('../controllers/adminController');
+const { getPendingStores, updateStoreStatus, getPlatformStats, getAllStores, getAllUsers, deleteUser, getLedger, createPayout } = require('../controllers/adminController');
 const { protect, authorizeRoles } = require('../middlewares/authMiddleware');
 
 // All admin routes must be protected and restricted to 'admin' role
@@ -13,5 +13,7 @@ router.put('/stores/:id/status', updateStoreStatus);
 router.get('/stats', getPlatformStats);
 router.get('/users', getAllUsers);
 router.delete('/users/:id', deleteUser);
+router.get('/ledger', getLedger);
+router.post('/payouts', createPayout);
 
 module.exports = router;

@@ -1,6 +1,7 @@
 const Shopkeeper = require('../models/Shopkeeper');
 const User = require('../models/User');
 const Order = require('../models/Order');
+const Payout = require('../models/Payout');
 
 // @desc    Get all pending store approvals
 // @route   GET /api/admin/stores/pending
@@ -100,4 +101,90 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports = { getPendingStores, updateStoreStatus, getPlatformStats, getAllStores, getAllUsers, deleteUser };
+// @desc    Get admin financial ledger (payments received & payouts)
+// @route   GET /api/admin/ledger
+const getLedger = async (req, res) => {
+  try {
+    const orders = await Order.find({ paymentStatus: 'completed' }).populate('shopkeeperId', 'storeName ownerName');
+    const payouts = await Payout.find({}).populate('shopkeeperId', 'storeName ownerName');
+
+    let totalReceived = 0;
+    const storeLedgerMap = {};
+
+    orders.forEach(order => {
+      totalReceived += order.totalAmount;
+      const shopId = order.shopkeeperId?._id?.toString();
+      if (!shopId) return;
+      
+      if (!storeLedgerMap[shopId]) {
+        storeLedgerMap[shopId] = {
+          shopkeeperId: shopId,
+          storeName: order.shopkeeperId.storeName,
+          ownerName: order.shopkeeperId.ownerName,
+          totalSales: 0,
+          totalPaid: 0,
+          pendingBalance: 0
+        };
+      }
+      storeLedgerMap[shopId].totalSales += order.totalAmount;
+    });
+
+    payouts.forEach(payout => {
+      const shopId = payout.shopkeeperId?._id?.toString();
+      if (!shopId) return;
+      
+      if (!storeLedgerMap[shopId]) {
+        storeLedgerMap[shopId] = {
+          shopkeeperId: shopId,
+          storeName: payout.shopkeeperId?.storeName || 'Unknown',
+          ownerName: payout.shopkeeperId?.ownerName || 'Unknown',
+          totalSales: 0,
+          totalPaid: 0,
+          pendingBalance: 0
+        };
+      }
+      storeLedgerMap[shopId].totalPaid += payout.amount;
+    });
+
+    const storeLedger = Object.values(storeLedgerMap).map(store => {
+      store.pendingBalance = store.totalSales - store.totalPaid;
+      return store;
+    });
+
+    res.json({
+      totalReceived,
+      totalPayouts: payouts.reduce((acc, p) => acc + p.amount, 0),
+      storeLedger
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Create a payout to a shopkeeper
+// @route   POST /api/admin/payouts
+const createPayout = async (req, res) => {
+  try {
+    const { shopkeeperId, amount, transactionReference } = req.body;
+    
+    if (!shopkeeperId || !amount || amount <= 0) {
+      return res.status(400).json({ message: 'Valid shopkeeper ID and amount are required' });
+    }
+
+    const payout = new Payout({
+      shopkeeperId,
+      amount,
+      transactionReference,
+      status: 'completed'
+    });
+
+    await payout.save();
+    
+    res.status(201).json({ message: 'Payout recorded successfully', payout });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getPendingStores, updateStoreStatus, getPlatformStats, getAllStores, getAllUsers, deleteUser, getLedger, createPayout };

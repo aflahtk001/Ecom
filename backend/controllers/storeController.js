@@ -1,4 +1,6 @@
 const Shopkeeper = require('../models/Shopkeeper');
+const Order = require('../models/Order');
+const Payout = require('../models/Payout');
 
 const getNearbyStores = async (req, res) => {
   try {
@@ -23,4 +25,27 @@ const getNearbyStores = async (req, res) => {
   } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
-module.exports = { getNearbyStores };
+// @desc    Get store's financial ledger (total sales, payouts, pending)
+// @route   GET /api/stores/ledger
+const getStoreLedger = async (req, res) => {
+  try {
+    const shopId = req.user.id;
+    const orders = await Order.find({ shopkeeperId: shopId, paymentStatus: 'completed' });
+    const payouts = await Payout.find({ shopkeeperId: shopId }).sort({ createdAt: -1 });
+
+    const totalSales = orders.reduce((acc, order) => acc + order.totalAmount, 0);
+    const totalPaid = payouts.reduce((acc, payout) => acc + payout.amount, 0);
+    const pendingBalance = totalSales - totalPaid;
+
+    res.json({
+      totalSales,
+      totalPaid,
+      pendingBalance,
+      payouts
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getNearbyStores, getStoreLedger };

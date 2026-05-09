@@ -6,7 +6,7 @@ const crypto = require('crypto');
 // @route   POST /api/orders
 const createOrder = async (req, res) => {
   try {
-    const { products, totalAmount, deliveryAddress, shopkeeperId } = req.body;
+    const { products, totalAmount, deliveryAddress } = req.body;
 
     if (!products || products.length === 0) {
       return res.status(400).json({ message: 'No order items' });
@@ -27,28 +27,52 @@ const createOrder = async (req, res) => {
 
     const rzpOrder = await razorpay.orders.create(options);
 
-    // Save order in our database as 'pending'
-    const order = new Order({
-      userId: req.user.id,
-      shopkeeperId,
-      products,
-      totalAmount,
-      deliveryAddress,
-      razorpayOrderId: rzpOrder.id,
-      paymentStatus: 'pending',
-      orderStatus: 'placed'
+    // Group products by shopkeeperId
+    const shopkeeperGroups = {};
+    products.forEach(item => {
+      const shopId = item.shopkeeperId;
+      if (!shopId) return;
+      if (!shopkeeperGroups[shopId]) {
+        shopkeeperGroups[shopId] = {
+          shopkeeperId: shopId,
+          products: [],
+          totalAmount: 0
+        };
+      }
+      shopkeeperGroups[shopId].products.push({
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price
+      });
+      shopkeeperGroups[shopId].totalAmount += (item.price * item.quantity);
     });
 
-    const createdOrder = await order.save();
-
-    // Emit real-time notification to the shopkeeper
-    const io = req.app.get('io');
-    if (io) {
-      io.to(shopkeeperId.toString()).emit('newOrder', createdOrder);
+    // Save orders in our database as 'pending'
+    const createdOrders = [];
+    for (const shopId in shopkeeperGroups) {
+      const group = shopkeeperGroups[shopId];
+      const order = new Order({
+        userId: req.user.id,
+        shopkeeperId: shopId,
+        products: group.products,
+        totalAmount: group.totalAmount,
+        deliveryAddress,
+        razorpayOrderId: rzpOrder.id,
+        paymentStatus: 'pending',
+        orderStatus: 'placed'
+      });
+      const savedOrder = await order.save();
+      createdOrders.push(savedOrder);
+      
+      // Emit real-time notification to the shopkeeper
+      const io = req.app.get('io');
+      if (io) {
+        io.to(shopId.toString()).emit('newOrder', savedOrder);
+      }
     }
 
     res.status(201).json({
-      order: createdOrder,
+      orders: createdOrders,
       razorpayOrder: rzpOrder
     });
 
@@ -73,15 +97,16 @@ const verifyPayment = async (req, res) => {
       return res.status(400).json({ message: 'Transaction not legit!' });
     }
 
-    // Find the order and update status
-    const order = await Order.findOne({ razorpayOrderId: razorpay_order_id });
-    if (!order) return res.status(404).json({ message: 'Order not found' });
+    // Find the orders and update status
+    const orders = await Order.find({ razorpayOrderId: razorpay_order_id });
+    if (!orders || orders.length === 0) return res.status(404).json({ message: 'Orders not found' });
 
-    order.paymentStatus = 'completed';
-    order.orderStatus = 'confirmed';
-    await order.save();
+    await Order.updateMany(
+      { razorpayOrderId: razorpay_order_id },
+      { $set: { paymentStatus: 'completed', orderStatus: 'confirmed' } }
+    );
 
-    res.json({ message: 'Payment verified successfully', orderId: order._id });
+    res.json({ message: 'Payment verified successfully', orderIds: orders.map(o => o._id) });
 
   } catch (error) {
     res.status(500).json({ message: error.message });

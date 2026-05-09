@@ -7,7 +7,7 @@ import { removeFromCart, clearCart } from '../redux/cartSlice';
 import Navbar from '../components/Navbar';
 
 const Cart = () => {
-  const { cartItems, shopkeeperId } = useSelector((state) => state.cart);
+  const { cartItems } = useSelector((state) => state.cart);
   const { userInfo } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -43,10 +43,14 @@ const Cart = () => {
       
       // 2. Create Order in Backend
       const { data } = await api.post('/orders', {
-        products: cartItems.map(i => ({ productId: i._id, quantity: i.qty, price: i.sellingCost })),
+        products: cartItems.map(i => ({ 
+          productId: i._id, 
+          quantity: i.qty, 
+          price: i.sellingCost,
+          shopkeeperId: i.shopkeeperId?._id || i.shopkeeperId 
+        })),
         totalAmount,
-        deliveryAddress: address,
-        shopkeeperId
+        deliveryAddress: address
       });
 
       const options = {

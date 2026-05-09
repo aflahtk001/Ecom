@@ -16,6 +16,7 @@ const ManageCategories = () => {
     { name: 'Manage Stores', path: '/admin-dashboard/stores', icon: '🏪' },
     { name: 'Manage Users', path: '/admin-dashboard/users', icon: '👥' },
     { name: 'Categories', path: '/admin-dashboard/categories', icon: '📁' },
+    { name: 'Payments & Payouts', path: '/admin-dashboard/payouts', icon: '💸' },
   ];
 
   const fetchCategories = async () => {

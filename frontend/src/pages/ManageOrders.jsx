@@ -35,7 +35,8 @@ const links = [
   { name: 'Dashboard',  path: '/shopkeeper-dashboard',         icon: '📊' },
   { name: 'Products',   path: '/shopkeeper-dashboard/products', icon: '🛒' },
   { name: 'Orders',     path: '/shopkeeper-dashboard/orders',   icon: '📦' },
-  { name: 'Offers',     path: '/shopkeeper-dashboard/offers',   icon: '🏷️' },
+  { name: 'Offers',     path: '/shopkeeper-dashboard/offers',    icon: '🏷️' },
+  { name: 'Payments & Payouts', path: '/shopkeeper-dashboard/payouts', icon: '💸' },
 ];
 
 // Mock orders when backend is offline

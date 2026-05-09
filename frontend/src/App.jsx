@@ -16,6 +16,8 @@ import UserProfile from './pages/UserProfile';
 import ManageCategories from './pages/ManageCategories';
 import AdminStores from './pages/AdminStores';
 import AdminUsers from './pages/AdminUsers';
+import AdminPayouts from './pages/AdminPayouts';
+import ShopkeeperPayouts from './pages/ShopkeeperPayouts';
 import StoreProducts from './pages/StoreProducts';
 
 const Home = () => (
@@ -46,12 +48,14 @@ function App() {
         <Route path="/shopkeeper-dashboard/products" element={<ManageProducts />} />
         <Route path="/shopkeeper-dashboard/offers" element={<ManageOffers />} />
         <Route path="/shopkeeper-dashboard/orders" element={<ManageOrders />} />
+        <Route path="/shopkeeper-dashboard/payouts" element={<ShopkeeperPayouts />} />
         <Route path="/user-dashboard/orders" element={<MyOrders />} />
         <Route path="/user-dashboard/profile" element={<UserProfile />} />
         <Route path="/admin-dashboard/*" element={<AdminDashboard />} />
         <Route path="/admin-dashboard/categories" element={<ManageCategories />} />
         <Route path="/admin-dashboard/stores" element={<AdminStores />} />
         <Route path="/admin-dashboard/users" element={<AdminUsers />} />
+        <Route path="/admin-dashboard/payouts" element={<AdminPayouts />} />
         <Route path="/store/:storeId/products" element={<StoreProducts />} />
       </Routes>
       <ToastContainer position="bottom-right" />
