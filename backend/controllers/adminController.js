@@ -50,6 +50,8 @@ const getPlatformStats = async (req, res) => {
     const totalStores = await Shopkeeper.countDocuments({ isApproved: true });
     const totalOrders = await Order.countDocuments();
     
+    const orders = await Order.find({ paymentStatus: 'completed' });
+    
     // Platform Revenue calculated as 1% of Total Payouts Disbursed
     const payouts = await Payout.find({});
     const totalPayouts = payouts.reduce((acc, p) => acc + (p.amount || 0), 0);

@@ -136,8 +136,8 @@ const AdminOrders = () => {
                       <div>
                         <div className="flex items-center gap-3">
                           <span className="font-mono text-xs text-gray-400">TX: {tx.id.slice(-8).toUpperCase()}</span>
-                          <span className={`text-xs font-bold px-3 py-1 rounded-full ${STATUS_CONFIG[aggregateStatus].color}`}>
-                            {STATUS_CONFIG[aggregateStatus].label.toUpperCase()}
+                          <span className={`text-xs font-bold px-3 py-1 rounded-full ${STATUS_CONFIG[aggregateStatus]?.color || 'bg-gray-100'}`}>
+                            {STATUS_CONFIG[aggregateStatus]?.label?.toUpperCase() || aggregateStatus.toUpperCase()}
                           </span>
                         </div>
                         <p className="text-sm font-semibold text-gray-800 mt-1">{tx.userId?.name} ({tx.userId?.phone})</p>
@@ -191,8 +191,8 @@ const AdminOrders = () => {
                             <div key={sub._id} className="p-4 rounded-xl border border-gray-100 bg-gray-50/50">
                                 <div className="flex justify-between items-start mb-2">
                                     <p className="font-bold text-sm text-gray-800">{sub.shopkeeperId?.storeName}</p>
-                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${STATUS_CONFIG[sub.orderStatus].color}`}>
-                                        {sub.orderStatus.toUpperCase()}
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${STATUS_CONFIG[sub.orderStatus]?.color || 'bg-gray-200 text-gray-700'}`}>
+                                        {(STATUS_CONFIG[sub.orderStatus]?.label || sub.orderStatus).toUpperCase()}
                                     </span>
                                 </div>
                                 <ul className="text-xs text-gray-500 space-y-1">
