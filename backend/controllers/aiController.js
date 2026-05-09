@@ -1,22 +1,21 @@
-const { getLocalSuggestions } = require('../services/suggestionService');
+const { generateSeasonalSuggestions } = require('../services/geminiService');
 const Shopkeeper = require('../models/Shopkeeper');
 
 /**
- * Provides intelligent business suggestions to shopkeepers.
- * Switched from Gemini LLM to Local Rule-based engine for speed and reliability.
+ * Provides intelligent business suggestions to shopkeepers using Google Gemini AI.
  */
 const getShopSuggestions = async (req, res) => {
   try {
     const shopkeeper = await Shopkeeper.findById(req.user.id).populate('category');
     const categoryName = shopkeeper?.category?.name || 'general store';
 
-    // Local engine is instant and doesn't hit API limits
-    const suggestions = await getLocalSuggestions(categoryName);
+    // Use Gemini AI for real-time, context-aware seasonal suggestions
+    const suggestions = await generateSeasonalSuggestions(categoryName);
     
     res.json({ 
       success: true,
       suggestions,
-      engine: 'GramaBazaar Local Intelligence'
+      engine: 'Google Gemini 2.0 AI'
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
