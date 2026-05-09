@@ -1,5 +1,9 @@
+import React, { useState } from 'react';
 import api from '../api';
 import { useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { toast } from 'react-toastify';
+import { removeFromCart, clearCart } from '../redux/cartSlice';
 import Navbar from '../components/Navbar';
 
 const Cart = () => {

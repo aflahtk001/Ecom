@@ -1,5 +1,7 @@
+import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { useDispatch, useSelector } from 'react-redux';
+import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { addToCart } from '../redux/cartSlice';
 import Navbar from '../components/Navbar';
