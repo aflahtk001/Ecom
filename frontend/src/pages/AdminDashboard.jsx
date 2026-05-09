@@ -52,15 +52,15 @@ const AdminDashboard = () => {
 
   // Convert live stats into display cards
   const statCards = stats ? [
-    { label: 'Total Users', val: stats.totalUsers, color: 'text-blue-600', bg: 'bg-blue-50', icon: '👥', change: '--' },
-    { label: 'Total Stores', val: stats.totalStores, color: 'text-green-600', bg: 'bg-green-50', icon: '🏪', change: '--' },
-    { label: 'Total Orders', val: stats.totalOrders, color: 'text-purple-600', bg: 'bg-purple-50', icon: '📦', change: '--' },
-    { label: 'Platform Revenue', val: `₹${(Number(stats.platformRevenue) || 0).toFixed(2)}`, color: 'text-amber-600', bg: 'bg-amber-50', icon: '💰', change: '--' },
+    { label: 'Total Users', val: stats.totalUsers, color: 'text-blue-600', bg: 'bg-blue-50', icon: '👥' },
+    { label: 'Total Stores', val: stats.totalStores, color: 'text-green-600', bg: 'bg-green-50', icon: '🏪' },
+    { label: 'Total Orders', val: stats.totalOrders, color: 'text-purple-600', bg: 'bg-purple-50', icon: '📦' },
+    { label: 'Platform Revenue', val: `₹${(Number(stats.platformRevenue) || 0).toFixed(2)}`, color: 'text-amber-600', bg: 'bg-amber-50', icon: '💰' },
   ] : [
-    { label: 'Total Users', val: '--', color: 'text-blue-600', bg: 'bg-blue-50', icon: '👥', change: '--' },
-    { label: 'Total Stores', val: '--', color: 'text-green-600', bg: 'bg-green-50', icon: '🏪', change: '--' },
-    { label: 'Total Orders', val: '--', color: 'text-purple-600', bg: 'bg-purple-50', icon: '📦', change: '--' },
-    { label: 'Platform Revenue', val: '--', color: 'text-amber-600', bg: 'bg-amber-50', icon: '💰', change: '--' },
+    { label: 'Total Users', val: '--', color: 'text-blue-600', bg: 'bg-blue-50', icon: '👥' },
+    { label: 'Total Stores', val: '--', color: 'text-green-600', bg: 'bg-green-50', icon: '🏪' },
+    { label: 'Total Orders', val: '--', color: 'text-purple-600', bg: 'bg-purple-50', icon: '📦' },
+    { label: 'Platform Revenue', val: '--', color: 'text-amber-600', bg: 'bg-amber-50', icon: '💰' },
   ];
 
   return (
@@ -79,7 +79,6 @@ const AdminDashboard = () => {
                 <div className={`${s.bg} w-10 h-10 rounded-lg flex items-center justify-center text-xl mb-3`}>{s.icon}</div>
                 <p className="text-gray-500 text-xs font-medium uppercase tracking-wider mb-1">{s.label}</p>
                 <p className={`text-2xl font-bold ${s.color}`}>{s.val}</p>
-                <p className="text-green-500 text-xs font-medium mt-1">{s.change} this month</p>
               </div>
             ))}
           </div>

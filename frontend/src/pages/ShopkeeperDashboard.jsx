@@ -11,6 +11,8 @@ const ShopkeeperDashboard = () => {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState(null);
   const [activeChart, setActiveChart] = useState('sales'); // 'sales' | 'revenue'
+  const [stats, setStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true);
 
   const links = [
     { name: 'Dashboard', path: '/shopkeeper-dashboard', icon: '📊' },
@@ -39,13 +41,29 @@ const ShopkeeperDashboard = () => {
     }
   };
 
-  useEffect(() => { fetchAISuggestions(); }, [userInfo]);
+  const fetchStats = async () => {
+    if (!userInfo?.token) return;
+    setLoadingStats(true);
+    try {
+      const { data } = await api.get('/stores/stats');
+      setStats(data);
+    } catch (error) {
+      console.error('Failed to fetch stats', error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
-  const stats = [
-    { label: 'Total Sales', value: '0', icon: '📈', color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Active Orders', value: '0', icon: '📦', color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Products', value: '0', icon: '🛍️', color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Revenue', value: '₹0', icon: '💰', color: 'text-yellow-600', bg: 'bg-yellow-50' },
+  useEffect(() => { 
+    fetchAISuggestions(); 
+    fetchStats();
+  }, [userInfo]);
+
+  const statCards = [
+    { label: 'Total Sales', value: stats ? `₹${stats.totalSales}` : '0', icon: '📈', color: 'text-green-600', bg: 'bg-green-50' },
+    { label: 'Active Orders', value: stats ? stats.activeOrders : '0', icon: '📦', color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Products', value: stats ? stats.productCount : '0', icon: '🛍️', color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Revenue', value: stats ? `₹${Number(stats.revenue).toFixed(2)}` : '₹0', icon: '💰', color: 'text-yellow-600', bg: 'bg-yellow-50' },
   ];
 
   return (
@@ -81,7 +99,7 @@ const ShopkeeperDashboard = () => {
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
-            {stats.map((s, i) => (
+            {statCards.map((s, i) => (
               <div key={i} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
                 <div className={`${s.bg} w-10 h-10 rounded-lg flex items-center justify-center text-xl mb-3`}>{s.icon}</div>
                 <p className="text-gray-500 text-xs font-medium uppercase tracking-wider mb-1">{s.label}</p>
@@ -113,7 +131,11 @@ const ShopkeeperDashboard = () => {
                 </div>
               </div>
               <div className="h-56">
-                {activeChart === 'sales' ? <SalesBarChart /> : <RevenueLineChart />}
+                {activeChart === 'sales' ? (
+                  <SalesBarChart chartData={stats?.charts?.sales} />
+                ) : (
+                  <RevenueLineChart chartData={stats?.charts?.revenue} />
+                )}
               </div>
             </div>
 
@@ -149,7 +171,7 @@ const ShopkeeperDashboard = () => {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <h2 className="text-lg font-semibold text-gray-800 mb-5">Top Selling Products</h2>
             <div className="max-w-xs mx-auto">
-              <TopProductsDoughnut />
+              <TopProductsDoughnut chartData={stats?.charts?.topProducts} />
             </div>
           </div>
         </main>

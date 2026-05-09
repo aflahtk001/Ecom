@@ -92,9 +92,10 @@ const ManageOrders = () => {
       setLoading(true);
       try {
         const { data } = await api.get('/orders/shopkeeper');
-        setOrders(data.length ? data : MOCK_ORDERS);
-      } catch {
-        setOrders(MOCK_ORDERS);
+        setOrders(data);
+      } catch (err) {
+        console.error('Failed to fetch orders', err);
+        setOrders([]); // Show empty state if fetch fails
       } finally {
         setLoading(false);
       }

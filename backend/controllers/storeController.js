@@ -1,6 +1,7 @@
 const Shopkeeper = require('../models/Shopkeeper');
 const Order = require('../models/Order');
 const Payout = require('../models/Payout');
+const Product = require('../models/Product');
 
 const getNearbyStores = async (req, res) => {
   try {
@@ -48,4 +49,74 @@ const getStoreLedger = async (req, res) => {
   }
 };
 
-module.exports = { getNearbyStores, getStoreLedger };
+// @desc    Get shopkeeper dashboard stats
+// @route   GET /api/stores/stats
+const getShopkeeperStats = async (req, res) => {
+  try {
+    const shopId = req.user.id;
+    
+    const productCount = await Product.countDocuments({ shopkeeperId: shopId });
+    const activeOrders = await Order.countDocuments({ 
+      shopkeeperId: shopId, 
+      orderStatus: { $ne: 'delivered' },
+      paymentStatus: 'completed' 
+    });
+    
+    const completedOrders = await Order.find({ 
+      shopkeeperId: shopId, 
+      paymentStatus: 'completed' 
+    }).populate('products.productId', 'name');
+
+    const totalSales = completedOrders.reduce((acc, order) => acc + (order.totalAmount || 0), 0);
+    const revenue = totalSales * 0.95; // 95% of sales (5% platform fee)
+
+    // --- Chart Data ---
+    const last6Months = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      last6Months.push({ month: d.getMonth(), year: d.getFullYear() });
+    }
+
+    const salesData = last6Months.map(m => {
+      return completedOrders.filter(o => {
+        const d = new Date(o.createdAt);
+        return d.getMonth() === m.month && d.getFullYear() === m.year;
+      }).reduce((acc, order) => acc + (order.totalAmount || 0), 0);
+    });
+
+    const revenueData = salesData.map(val => val * 0.95);
+
+    // Top Products
+    const productSalesMap = {};
+    completedOrders.forEach(order => {
+      order.products.forEach(item => {
+        const name = item.productId?.name || 'Unknown Product';
+        productSalesMap[name] = (productSalesMap[name] || 0) + item.quantity;
+      });
+    });
+
+    const topProducts = Object.entries(productSalesMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    res.json({
+      totalSales,
+      activeOrders,
+      productCount,
+      revenue,
+      charts: {
+        sales: salesData,
+        revenue: revenueData,
+        topProducts: {
+          labels: topProducts.map(tp => tp[0]),
+          data: topProducts.map(tp => tp[1])
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getNearbyStores, getStoreLedger, getShopkeeperStats };

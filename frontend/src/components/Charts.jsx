@@ -20,8 +20,12 @@ ChartJS.register(
 );
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const currentMonthIdx = new Date().getMonth();
-const last6Months = months.slice(Math.max(0, currentMonthIdx - 5), currentMonthIdx + 1);
+const last6Months = [];
+for (let i = 5; i >= 0; i--) {
+  const d = new Date();
+  d.setMonth(d.getMonth() - i);
+  last6Months.push(months[d.getMonth()]);
+}
 
 // Smart rupee tick formatter — shows ₹Xk only when value is large enough
 const formatRupee = (v) => {
@@ -33,12 +37,12 @@ const formatRupee = (v) => {
 
 // --- Shopkeeper Charts ---
 
-export const SalesBarChart = () => {
+export const SalesBarChart = ({ chartData }) => {
   const data = {
     labels: last6Months,
     datasets: [{
       label: 'Sales (₹)',
-      data: [12000, 19500, 14000, 21000, 18500, 27000].slice(-last6Months.length),
+      data: chartData || [0, 0, 0, 0, 0, 0],
       backgroundColor: 'rgba(22, 163, 74, 0.75)',
       borderColor: 'rgba(22, 163, 74, 1)',
       borderWidth: 2,
@@ -62,12 +66,12 @@ export const SalesBarChart = () => {
   return <Bar data={data} options={options} />;
 };
 
-export const RevenueLineChart = () => {
+export const RevenueLineChart = ({ chartData }) => {
   const data = {
     labels: last6Months,
     datasets: [{
       label: 'Revenue (₹)',
-      data: [8000, 14000, 9500, 16000, 13000, 22000].slice(-last6Months.length),
+      data: chartData || [0, 0, 0, 0, 0, 0],
       fill: true,
       borderColor: 'rgba(99, 102, 241, 1)',
       backgroundColor: 'rgba(99, 102, 241, 0.1)',
@@ -90,11 +94,11 @@ export const RevenueLineChart = () => {
   return <Line data={data} options={options} />;
 };
 
-export const TopProductsDoughnut = () => {
+export const TopProductsDoughnut = ({ chartData }) => {
   const data = {
-    labels: ['Rice', 'Coconut Oil', 'Spices', 'Pulses', 'Snacks'],
+    labels: chartData?.labels || ['No Data'],
     datasets: [{
-      data: [35, 25, 18, 12, 10],
+      data: chartData?.data || [1],
       backgroundColor: [
         'rgba(22, 163, 74, 0.85)',
         'rgba(99, 102, 241, 0.85)',

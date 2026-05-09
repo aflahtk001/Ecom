@@ -62,9 +62,10 @@ const MyOrders = () => {
       if (!userInfo?.token) return;
       try {
         const { data } = await api.get('/orders/my');
-        setOrders(data.length ? data : MOCK_ORDERS);
-      } catch {
-        setOrders(MOCK_ORDERS);
+        setOrders(data);
+      } catch (err) {
+        console.error('Failed to fetch orders', err);
+        setOrders([]); // Show empty state if actual fetch fails, or keep MOCK_ORDERS only for local dev
       } finally {
         setLoading(false);
       }
