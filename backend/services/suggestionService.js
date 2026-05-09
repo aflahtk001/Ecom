@@ -15,6 +15,11 @@ const categoryMatrix = {
       { product: 'Vishu Sadhya Kits', reason: 'Pre-packaged ingredients for the Vishu festival.' },
       { product: 'Ice Cream & Curd', reason: 'Dairy cooling products sell 40% more in summer.' }
     ],
+    reopening: [
+      { product: 'Lunch Boxes & Flasks', reason: 'School reopening in June drives massive demand.' },
+      { product: 'Umbrellas (New Stock)', reason: 'Monsoon arrives in 3 weeks; customers buy early.' },
+      { product: 'Health Drinks', reason: 'Parents stock up for kids starting the new academic year.' }
+    ],
     harvest: [
       { product: 'Premium Feast Rice', reason: 'Onam Sadhya requires high-quality long grain rice.' },
       { product: 'Vegetable Oil Buckets', reason: 'High frying volume during festival cooking.' },
@@ -35,6 +40,11 @@ const categoryMatrix = {
       { product: 'Fresh Fruit Juices', reason: 'Natural cooling drinks are preferred over sodas.' },
       { product: 'Light Pastries', reason: 'Customers prefer lighter cream during hot months.' }
     ],
+    reopening: [
+      { product: 'School Snacks (Bulk)', reason: 'Packaged snacks for kids lunch boxes are in demand.' },
+      { product: 'Health Biscuits', reason: 'Nutrition-focused snacks for the new school year.' },
+      { product: 'Fruit Cakes', reason: 'Easy-to-pack evening snacks for rainy school days.' }
+    ],
     harvest: [
       { product: 'Onam Special Sweets', reason: 'Traditional sweets for gifting and feasting.' },
       { product: 'Gift Hampers', reason: 'Ready-made snack boxes for festival visits.' }
@@ -52,6 +62,11 @@ const categoryMatrix = {
     summer: [
       { product: 'Summer Vacation Books', reason: 'Activity books for children during holidays.' },
       { product: 'Arts & Crafts Kits', reason: 'Creative indoor projects during peak heat.' }
+    ],
+    reopening: [
+      { product: 'Notebooks & Pens (Sets)', reason: 'Bulk purchase for school season reopening in June.' },
+      { product: 'School Bags & Kits', reason: 'Primary sales season for back-to-school essentials.' },
+      { product: 'Rain Protection Gear', reason: 'Umbrellas and bag covers are top priority for students.' }
     ],
     general: [
       { product: 'Notebooks & Pens', reason: 'Daily essentials for students and local offices.' },
@@ -81,8 +96,9 @@ const getLocalSuggestions = async (categoryName) => {
   let season = 'general';
   
   if (month >= 5 && month <= 7) season = 'monsoon';
-  else if (month >= 7 && month <= 8) season = 'harvest';
-  else if (month >= 2 && month <= 4) season = 'summer';
+  else if (month >= 8 && month <= 9) season = 'harvest';
+  else if (month === 4) season = 'reopening'; // May: School reopening & Monsoon prep
+  else if (month >= 2 && month <= 3) season = 'summer';
 
   // Normalize category name
   const cat = categoryName.toLowerCase();
