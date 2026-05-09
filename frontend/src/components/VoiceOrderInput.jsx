@@ -79,7 +79,7 @@ const VoiceOrderInput = ({ lat, lng }) => {
       recognition.stop();
     } else {
       setTranscript('');
-      setResult(null);
+      setMatches([]);
       recognition.start();
     }
   };
