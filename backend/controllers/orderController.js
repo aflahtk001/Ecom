@@ -1,4 +1,5 @@
 const Order = require('../models/Order');
+const Product = require('../models/Product');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 
@@ -101,6 +102,17 @@ const verifyPayment = async (req, res) => {
     const orders = await Order.find({ razorpayOrderId: razorpay_order_id });
     if (!orders || orders.length === 0) return res.status(404).json({ message: 'Orders not found' });
 
+    // Decrement stock for each product in the verified orders
+    for (const order of orders) {
+      if (order.paymentStatus !== 'completed') { // Prevent double decrement if already verified
+        for (const item of order.products) {
+          await Product.findByIdAndUpdate(item.productId, {
+            $inc: { stockQuantity: -item.quantity }
+          });
+        }
+      }
+    }
+
     await Order.updateMany(
       { razorpayOrderId: razorpay_order_id },
       { $set: { paymentStatus: 'completed', orderStatus: 'received' } }
@@ -157,8 +169,18 @@ const updateOrderStatus = async (req, res) => {
       return res.status(401).json({ message: 'Not authorized' });
     }
 
+    const previousStatus = order.orderStatus;
     order.orderStatus = orderStatus;
     await order.save();
+
+    // If order is cancelled and was previously not cancelled, restore stock
+    if (orderStatus === 'cancelled' && previousStatus !== 'cancelled') {
+      for (const item of order.products) {
+        await Product.findByIdAndUpdate(item.productId, {
+          $inc: { stockQuantity: item.quantity }
+        });
+      }
+    }
 
     // Emit real-time notification to the user
     const io = req.app.get('io');
