@@ -9,6 +9,7 @@ const ManageProducts = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [filterLowStock, setFilterLowStock] = useState(false);
   const [categories, setCategories] = useState([]);
   const [isApproved, setIsApproved] = useState(null); // null = loading, true/false = status
   const [formData, setFormData] = useState({
@@ -137,6 +138,8 @@ const ManageProducts = () => {
     { name: 'Payments & Payouts', path: '/shopkeeper-dashboard/payouts', icon: '💸' },
   ];
 
+  const displayedProducts = filterLowStock ? products.filter(p => p.stockQuantity <= 10) : products;
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
@@ -145,11 +148,22 @@ const ManageProducts = () => {
         <main className="flex-1 p-8 overflow-y-auto">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800">Manage Products</h1>
-            {isApproved && (
-              <button onClick={() => setShowForm(!showForm)} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition shadow-sm">
-                {showForm ? 'Close Form' : '+ Add Product'}
-              </button>
-            )}
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-600 bg-white px-3 py-2 rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:bg-gray-50 transition">
+                <input 
+                  type="checkbox" 
+                  checked={filterLowStock} 
+                  onChange={(e) => setFilterLowStock(e.target.checked)}
+                  className="rounded text-red-600 focus:ring-red-500"
+                />
+                <span className={filterLowStock ? "text-red-600 font-semibold" : ""}>Show Low Stock (&le;10)</span>
+              </label>
+              {isApproved && (
+                <button onClick={() => setShowForm(!showForm)} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition shadow-sm">
+                  {showForm ? 'Close Form' : '+ Add Product'}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Approval Pending Banner */}
@@ -275,10 +289,10 @@ const ManageProducts = () => {
                 </tr>
               </thead>
               <tbody>
-                {products.length === 0 ? (
-                  <tr><td colSpan="5" className="p-8 text-center text-gray-500">No products found. Add some to start selling!</td></tr>
+                {displayedProducts.length === 0 ? (
+                  <tr><td colSpan="5" className="p-8 text-center text-gray-500">{filterLowStock ? 'No low stock products.' : 'No products found. Add some to start selling!'}</td></tr>
                 ) : (
-                  products.map(p => (
+                  displayedProducts.map(p => (
                     <tr key={p._id} className="hover:bg-gray-50 transition">
                       <td className="p-4 border-b">
                         <div className="flex items-center gap-3">
