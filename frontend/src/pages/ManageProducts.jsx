@@ -19,6 +19,7 @@ const ManageProducts = () => {
   const [imageFile, setImageFile] = useState(null);
   const [translating, setTranslating] = useState(false);
   const [translateSuggestions, setTranslateSuggestions] = useState([]);
+  const [editingId, setEditingId] = useState(null);
 
   const fetchProducts = async () => {
     if (!userInfo?.token) return;
@@ -104,20 +105,40 @@ const ManageProducts = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
       const data = new FormData();
       Object.keys(formData).forEach(key => data.append(key, formData[key]));
       if (imageFile) data.append('image', imageFile);
 
-      await api.post('/products', data, { headers: { 'Content-Type': 'multipart/form-data' } });
+      if (editingId) {
+        await api.put(`/products/${editingId}`, data, { headers: { 'Content-Type': 'multipart/form-data' } });
+        toast.success('Product updated successfully');
+      } else {
+        await api.post('/products', data, { headers: { 'Content-Type': 'multipart/form-data' } });
+        toast.success('Product added successfully');
+      }
       
-      toast.success('Product added successfully');
       setShowForm(false);
+      setEditingId(null);
+      setFormData({ name: '', malayalamName: '', category: categories[0]?._id || '', actualCost: '', sellingCost: '', stockQuantity: '', unit: 'kg', description: '' });
       setImageFile(null);
       fetchProducts();
-    } catch (error) { toast.error(error.response?.data?.message || 'Error adding product'); }
+    } catch (error) { toast.error(error.response?.data?.message || 'Error saving product'); }
+  };
+
+  const handleEdit = (product) => {
+    setEditingId(product._id);
+    setFormData({
+      name: product.name,
+      malayalamName: product.malayalamName,
+      category: product.category?._id || product.category,
+      actualCost: product.actualCost,
+      sellingCost: product.sellingCost,
+      stockQuantity: product.stockQuantity,
+      unit: product.unit,
+      description: product.description || ''
+    });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id) => {
@@ -159,7 +180,13 @@ const ManageProducts = () => {
                 <span className={filterLowStock ? "text-red-600 font-semibold" : ""}>Show Low Stock (&le;10)</span>
               </label>
               {isApproved && (
-                <button onClick={() => setShowForm(!showForm)} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition shadow-sm">
+                <button onClick={() => {
+                  if (showForm && editingId) {
+                    setEditingId(null);
+                    setFormData({ name: '', malayalamName: '', category: categories[0]?._id || '', actualCost: '', sellingCost: '', stockQuantity: '', unit: 'kg', description: '' });
+                  }
+                  setShowForm(!showForm);
+                }} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition shadow-sm">
                   {showForm ? 'Close Form' : '+ Add Product'}
                 </button>
               )}
@@ -182,7 +209,7 @@ const ManageProducts = () => {
 
           {showForm && (
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8 animate-fade-in-down">
-              <h2 className="text-xl font-semibold mb-4 text-gray-800">Add New Product</h2>
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">{editingId ? 'Edit Product' : 'Add New Product'}</h2>
               <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Name (English)</label>
@@ -253,12 +280,12 @@ const ManageProducts = () => {
                     ))}
                   </select>
                 </div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Actual Cost (₹)</label><input type="number" name="actualCost" required className="w-full p-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500" onChange={handleChange} /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Selling Cost (₹)</label><input type="number" name="sellingCost" required className="w-full p-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500" onChange={handleChange} /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label><input type="number" name="stockQuantity" required className="w-full p-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500" onChange={handleChange} /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Actual Cost (₹)</label><input type="number" name="actualCost" required className="w-full p-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500" onChange={handleChange} value={formData.actualCost} /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Selling Cost (₹)</label><input type="number" name="sellingCost" required className="w-full p-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500" onChange={handleChange} value={formData.sellingCost} /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label><input type="number" name="stockQuantity" required className="w-full p-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500" onChange={handleChange} value={formData.stockQuantity} /></div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
-                  <select name="unit" className="w-full p-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500" onChange={handleChange}>
+                  <select name="unit" className="w-full p-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500" onChange={handleChange} value={formData.unit}>
                     <option value="kg">kg</option>
                     <option value="liter">liter</option>
                     <option value="packet">packet</option>
@@ -268,10 +295,10 @@ const ManageProducts = () => {
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Product Image</label><input type="file" accept="image/*" onChange={handleFileChange} className="w-full p-1.5 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" /></div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
-                  <textarea name="description" rows="2" className="w-full p-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500" onChange={handleChange} placeholder="Brief details about the product"></textarea>
+                  <textarea name="description" rows="2" className="w-full p-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500" onChange={handleChange} value={formData.description} placeholder="Brief details about the product"></textarea>
                 </div>
                 <div className="md:col-span-2 mt-2">
-                  <button type="submit" className="w-full md:w-auto bg-green-600 text-white px-8 py-2 rounded-lg font-medium hover:bg-green-700 transition">Save Product</button>
+                  <button type="submit" className="w-full md:w-auto bg-green-600 text-white px-8 py-2 rounded-lg font-medium hover:bg-green-700 transition">{editingId ? 'Update Product' : 'Save Product'}</button>
                 </div>
               </form>
             </div>
@@ -314,7 +341,8 @@ const ManageProducts = () => {
                           {p.stockQuantity} {p.unit}
                         </span>
                       </td>
-                      <td className="p-4 border-b">
+                      <td className="p-4 border-b flex gap-3">
+                        <button onClick={() => handleEdit(p)} className="text-indigo-600 hover:text-indigo-800 font-medium text-sm">Edit</button>
                         <button onClick={() => handleDelete(p._id)} className="text-red-500 hover:text-red-700 font-medium text-sm">Delete</button>
                       </td>
                     </tr>

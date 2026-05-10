@@ -45,4 +45,33 @@ const deleteProduct = async (req, res) => {
   } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
-module.exports = { getShopProducts, createProduct, deleteProduct };
+const updateProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    if (product.shopkeeperId.toString() !== req.user.id) {
+      return res.status(401).json({ message: 'Not authorized to update this product' });
+    }
+
+    const { name, malayalamName, category, actualCost, sellingCost, stockQuantity, unit, description } = req.body;
+    
+    product.name = name || product.name;
+    product.malayalamName = malayalamName || product.malayalamName;
+    product.category = category || product.category;
+    product.actualCost = actualCost || product.actualCost;
+    product.sellingCost = sellingCost || product.sellingCost;
+    product.stockQuantity = stockQuantity !== undefined ? stockQuantity : product.stockQuantity;
+    product.unit = unit || product.unit;
+    product.description = description || product.description;
+
+    if (req.file) {
+      product.image = req.file.path;
+    }
+
+    const updatedProduct = await product.save();
+    res.json(updatedProduct);
+  } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
+module.exports = { getShopProducts, createProduct, deleteProduct, updateProduct };
