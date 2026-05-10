@@ -105,6 +105,9 @@ const ManageProducts = () => {
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
       const data = new FormData();
       Object.keys(formData).forEach(key => data.append(key, formData[key]));
       if (imageFile) data.append('image', imageFile);
@@ -122,7 +125,9 @@ const ManageProducts = () => {
       setFormData({ name: '', malayalamName: '', category: categories[0]?._id || '', actualCost: '', sellingCost: '', stockQuantity: '', unit: 'kg', description: '' });
       setImageFile(null);
       fetchProducts();
-    } catch (error) { toast.error(error.response?.data?.message || 'Error saving product'); }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error saving product');
+    }
   };
 
   const handleEdit = (product) => {
