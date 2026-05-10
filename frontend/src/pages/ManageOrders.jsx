@@ -223,8 +223,8 @@ const ManageOrders = () => {
                           <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
                           {cfg.label}
                         </span>
-                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${order.paymentStatus === 'completed' ? 'bg-green-50 text-green-600' : 'bg-yellow-50 text-yellow-600'}`}>
-                          💳 {order.paymentStatus}
+                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${order.paymentMethod === 'COD' ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-green-600'}`}>
+                          {order.paymentMethod === 'COD' ? '💵 COD' : '💳 PAID'}
                         </span>
                       </div>
                       <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleString()}</p>

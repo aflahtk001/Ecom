@@ -172,6 +172,11 @@ const MyOrders = () => {
                         <p className="text-xs text-gray-400">{new Date(tx.createdAt).toLocaleString()}</p>
                       </div>
                       <div className="flex items-center gap-4">
+                        <div className="flex flex-col items-end mr-2">
+                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${tx.subOrders[0]?.paymentMethod === 'COD' ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
+                             {tx.subOrders[0]?.paymentMethod === 'COD' ? '💵 CASH ON DELIVERY' : '💳 ONLINE PAID'}
+                           </span>
+                        </div>
                         <div className="text-right hidden sm:block">
                           <p className="text-xs font-medium text-gray-400 uppercase">Total Amount</p>
                           <p className="text-xl font-black text-green-600">₹{tx.totalAmount}</p>

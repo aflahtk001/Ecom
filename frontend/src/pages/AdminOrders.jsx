@@ -139,6 +139,9 @@ const AdminOrders = () => {
                           <span className={`text-xs font-bold px-3 py-1 rounded-full ${STATUS_CONFIG[aggregateStatus]?.color || 'bg-gray-100'}`}>
                             {STATUS_CONFIG[aggregateStatus]?.label?.toUpperCase() || aggregateStatus.toUpperCase()}
                           </span>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded border ${tx.subOrders[0]?.paymentMethod === 'COD' ? 'border-orange-200 text-orange-600 bg-orange-50' : 'border-blue-200 text-blue-600 bg-blue-50'}`}>
+                            {tx.subOrders[0]?.paymentMethod === 'COD' ? 'COD' : 'ONLINE'}
+                          </span>
                         </div>
                         <p className="text-sm font-semibold text-gray-800 mt-1">{tx.userId?.name} ({tx.userId?.phone})</p>
                         <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">📍 {tx.deliveryAddress}</p>
