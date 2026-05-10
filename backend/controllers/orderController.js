@@ -7,26 +7,29 @@ const crypto = require('crypto');
 // @route   POST /api/orders
 const createOrder = async (req, res) => {
   try {
-    const { products, totalAmount, deliveryAddress } = req.body;
+    const { products, totalAmount, deliveryAddress, paymentMethod = 'Razorpay' } = req.body;
 
     if (!products || products.length === 0) {
       return res.status(400).json({ message: 'No order items' });
     }
 
-    // Initialize Razorpay instance (using dummy keys if env vars missing)
-    const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_dummy_key_id',
-      key_secret: process.env.RAZORPAY_KEY_SECRET || 'dummy_secret'
-    });
+    let rzpOrder = null;
+    if (paymentMethod === 'Razorpay') {
+      // Initialize Razorpay instance
+      const razorpay = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_dummy_key_id',
+        key_secret: process.env.RAZORPAY_KEY_SECRET || 'dummy_secret'
+      });
 
-    // Create Razorpay order
-    const options = {
-      amount: Math.round(totalAmount * 100), // amount in smallest currency unit (paise)
-      currency: "INR",
-      receipt: `receipt_order_${Date.now()}`
-    };
+      // Create Razorpay order
+      const options = {
+        amount: Math.round(totalAmount * 100),
+        currency: "INR",
+        receipt: `receipt_order_${Date.now()}`
+      };
 
-    const rzpOrder = await razorpay.orders.create(options);
+      rzpOrder = await razorpay.orders.create(options);
+    }
 
     // Group products by shopkeeperId
     const shopkeeperGroups = {};
@@ -58,11 +61,21 @@ const createOrder = async (req, res) => {
         products: group.products,
         totalAmount: group.totalAmount,
         deliveryAddress,
-        razorpayOrderId: rzpOrder.id,
-        paymentStatus: 'pending',
+        razorpayOrderId: rzpOrder ? rzpOrder.id : null,
+        paymentMethod,
+        paymentStatus: paymentMethod === 'COD' ? 'pending' : 'pending', // Both start as pending
         orderStatus: 'received'
       });
       const savedOrder = await order.save();
+
+      // If COD, decrement stock immediately
+      if (paymentMethod === 'COD') {
+        for (const item of group.products) {
+          await Product.findByIdAndUpdate(item.productId, {
+            $inc: { stockQuantity: -item.quantity }
+          });
+        }
+      }
       createdOrders.push(savedOrder);
       
       // Emit real-time notification to the shopkeeper

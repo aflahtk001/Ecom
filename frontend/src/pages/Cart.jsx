@@ -12,6 +12,7 @@ const Cart = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [address, setAddress] = useState(userInfo?.deliveryAddress || '');
+  const [paymentMethod, setPaymentMethod] = useState('Razorpay'); // 'Razorpay' | 'COD'
 
   const totalAmount = cartItems.reduce((acc, item) => acc + item.sellingCost * item.qty, 0);
 
@@ -31,10 +32,12 @@ const Cart = () => {
       return;
     }
 
-    const res = await loadRazorpay();
-    if (!res) {
-      toast.error('Razorpay SDK failed to load');
-      return;
+    if (paymentMethod === 'Razorpay') {
+      const res = await loadRazorpay();
+      if (!res) {
+        toast.error('Razorpay SDK failed to load');
+        return;
+      }
     }
 
     try {
@@ -50,8 +53,16 @@ const Cart = () => {
           shopkeeperId: i.shopkeeperId?._id || i.shopkeeperId 
         })),
         totalAmount,
-        deliveryAddress: address
+        deliveryAddress: address,
+        paymentMethod
       });
+
+      if (paymentMethod === 'COD') {
+        toast.success('Order placed successfully (Cash on Delivery)');
+        dispatch(clearCart());
+        navigate('/user-dashboard/orders');
+        return;
+      }
 
       const options = {
         key: configData.key,
@@ -143,6 +154,26 @@ const Cart = () => {
                 <span className="text-xl font-bold text-gray-800">Total</span>
                 <span className="text-xl font-bold text-green-600">₹{totalAmount}</span>
               </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button 
+                    onClick={() => setPaymentMethod('Razorpay')}
+                    className={`flex flex-col items-center p-3 rounded-xl border transition ${paymentMethod === 'Razorpay' ? 'border-green-600 bg-green-50 shadow-sm' : 'border-gray-200 bg-white hover:border-green-200'}`}
+                  >
+                    <span className="text-xl mb-1">💳</span>
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-gray-500">Online Pay</span>
+                  </button>
+                  <button 
+                    onClick={() => setPaymentMethod('COD')}
+                    className={`flex flex-col items-center p-3 rounded-xl border transition ${paymentMethod === 'COD' ? 'border-green-600 bg-green-50 shadow-sm' : 'border-gray-200 bg-white hover:border-green-200'}`}
+                  >
+                    <span className="text-xl mb-1">💵</span>
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-gray-500">Cash on Delivery</span>
+                  </button>
+                </div>
+              </div>
               
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Delivery Address</label>
@@ -159,7 +190,7 @@ const Cart = () => {
                 onClick={handleCheckout}
                 className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition shadow-md flex justify-center items-center gap-2"
               >
-                <span>Proceed to Pay</span>
+                <span>{paymentMethod === 'Razorpay' ? 'Proceed to Pay' : 'Place Order (COD)'}</span>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
