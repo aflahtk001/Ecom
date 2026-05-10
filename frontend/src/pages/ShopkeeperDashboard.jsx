@@ -97,6 +97,31 @@ const ShopkeeperDashboard = () => {
             </div>
           )}
 
+          {/* Low Stock Reminder Banner */}
+          {stats?.lowStockProducts?.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-5 mb-8 flex items-start gap-4 shadow-sm">
+              <span className="text-3xl">⚠️</span>
+              <div className="flex-1">
+                <h2 className="font-bold text-red-800 text-lg">Low Stock Reminder</h2>
+                <p className="text-sm text-red-700 mt-1">
+                  You have {stats.lowStockProducts.length} product(s) going out of stock soon. Please restock them to avoid losing sales.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {stats.lowStockProducts.map((p, idx) => (
+                    <span key={idx} className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-semibold border border-red-200">
+                      {p.name} ({p.stockQuantity} {p.unit})
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <a href="/shopkeeper-dashboard/products">
+                <button className="bg-red-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-red-700 transition whitespace-nowrap shadow-sm">
+                  Update Stock
+                </button>
+              </a>
+            </div>
+          )}
+
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
             {statCards.map((s, i) => (

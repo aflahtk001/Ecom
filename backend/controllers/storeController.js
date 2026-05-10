@@ -56,6 +56,11 @@ const getShopkeeperStats = async (req, res) => {
     const shopId = req.user.id;
     
     const productCount = await Product.countDocuments({ shopkeeperId: shopId });
+    const lowStockProducts = await Product.find({ 
+      shopkeeperId: shopId, 
+      stockQuantity: { $lte: 10 } 
+    }).select('name stockQuantity unit');
+
     const activeOrders = await Order.countDocuments({ 
       shopkeeperId: shopId, 
       orderStatus: { $ne: 'delivered' },
@@ -104,6 +109,7 @@ const getShopkeeperStats = async (req, res) => {
       totalSales,
       activeOrders,
       productCount,
+      lowStockProducts,
       revenue,
       charts: {
         sales: salesData,
